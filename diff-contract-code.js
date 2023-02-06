@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import fs from 'fs';
 import path from 'path';
 import { exit } from 'process';
+import { spawnSync } from 'child_process';
 
 dotenv.config();
 const { ETHERSCAN_API_KEY } = process.env;
@@ -42,18 +43,76 @@ const getSourceFilesFromAddress = async (address) => {
   for (let fileName in sourceObj) {
     if (sourceObj.hasOwnProperty(fileName)) {
       fs.mkdirSync(path.join(dir, path.dirname(fileName)), { recursive: true });
-      fs.writeFile(path.join(dir, fileName), sourceObj[fileName].content, err => {
-        if (err) {
-          console.error(err);
-        }
-      });
+      fs.writeFileSync(path.join(dir, fileName), sourceObj[fileName].content);
     }
   }
   return dir;
 }
 
-
 const dir1 = await getSourceFilesFromAddress(address1);
 const dir2 = await getSourceFilesFromAddress(address2);
 
-console.log(dir1, dir2);
+const sliceOffFirstDirectory = (f) => {
+  return f.split("/").slice(1).join("/");
+}
+
+const getFilesRecursively = (dir) => {
+  let files = [];
+  fs.readdirSync(dir, { withFileTypes: true}).map(f => {
+    if (f.isDirectory()) {
+      files = files.concat(getFilesRecursively(path.join(dir, f.name)));
+    } else {
+      files.push(sliceOffFirstDirectory(path.join(dir,f.name)));
+    }
+  });
+  return files;
+};
+
+
+const files1 = getFilesRecursively(dir1);
+const files2 = getFilesRecursively(dir2);
+
+console.log(`Address 1: ${address1}`);
+console.log(`Address 2: ${address2}`);
+console.log(`\n* At first address but not second`);
+
+for (let i in files1) {
+  let f = files1[i];
+  if (!files2.includes(f)) {
+    console.log(`  - ${f}`);
+  }
+}
+
+console.log(`\n* At second address but not first`);
+for (let i in files2) {
+  let f = files2[i];
+  if (!files1.includes(f)) {
+    console.log(`  - ${f}`);
+  }
+}
+
+console.log("\n* Diffs follow")
+
+const diffFiles = (f1, f2) => {
+  const result = spawnSync('git', ['diff', '--no-index', '--word-diff=color', f1, f2]);
+  if (result.status != 0) {
+    console.log(result.stdout.toString());
+  }
+
+}
+
+for (let i in files1) {
+  let f = files1[i];
+  if (files2.includes(f)) {
+    diffFiles(`${dir1}/${f}`, `${dir2}/${f}`);
+    // console.log(`${dir1}/${f} differs from ${dir2}/${f}`);
+  }
+}
+
+const rmRf = (dir) => {
+  fs.rmSync(dir, { recursive: true, force: true});
+}
+
+rmRf(dir1);
+rmRf(dir2);
+
