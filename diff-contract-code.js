@@ -94,7 +94,7 @@ for (let i in files2) {
 console.log("\n* Diffs follow")
 
 const diffFiles = (f1, f2) => {
-  const result = spawnSync('git', ['diff', '--no-index', '--word-diff=color', f1, f2]);
+  const result = spawnSync('git', ['diff', '--no-index', '--word-diff=plain', '--color', f1, f2]);
   if (result.status != 0) {
     console.log(result.stdout.toString());
   }
@@ -105,7 +105,6 @@ for (let i in files1) {
   let f = files1[i];
   if (files2.includes(f)) {
     diffFiles(`${dir1}/${f}`, `${dir2}/${f}`);
-    // console.log(`${dir1}/${f} differs from ${dir2}/${f}`);
   }
 }
 
