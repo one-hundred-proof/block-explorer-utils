@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [ "$INFURA_API_KEY" = "" ]; then
+  echo "Please set INFURA_API_KEY in the environment"
+  exit 1;
+fi
+
+
+if [ "$INFURA_PREFIX" = "" ]; then
+  export PREFIX="https://mainnet.infura.io/v3"
+else
+  export PREFIX="$INFURA_PREFIX"
+fi
+
+if [ $# -lt 2 ]; then
+    echo "Usage: $(basename $0) <contract address> <storage slot> [<block>]"
+    exit 1
+fi
+
+CONTRACT=$1
+SLOT=$2
+
+if [ $# -eq 2 ]; then
+  BLOCK="latest"
+else
+  BLOCK=$3
+fi
+
+curl -s $PREFIX/$INFURA_API_KEY \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getStorageAt\",\"params\": [\"$CONTRACT\", \"$SLOT\", \"$BLOCK\"],\"id\":1}" | jq
