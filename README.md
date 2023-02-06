@@ -3,7 +3,10 @@
 ## `diff-contract-code.js`
 
 ```
-node diff-contract-code.js 0x19890cf5c9a0b8d2f71eb71347d126b6f7d78b76 0x83597765904e28e3a360c17cb1f5635cbcbfdd63
+$ node diff-contract-code.js 0x19890cf5c9a0b8d2f71eb71347d126b6f7d78b76 0x83597765904e28e3a360c17cb1f5635cbcbfdd63
+```
+
+```
 Address 1: 0x19890cf5c9a0b8d2f71eb71347d126b6f7d78b76
 Address 2: 0x83597765904e28e3a360c17cb1f5635cbcbfdd63
 
