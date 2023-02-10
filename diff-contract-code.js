@@ -14,14 +14,18 @@ if (!ETHERSCAN_API_KEY) {
 }
 
 if (process.argv.length < 4) {
-  console.log(`Usage: ${path.basename(process.argv[1])} <address1> <address2>`);
+  console.log(`Usage: ${path.basename(process.argv[1])} <address1> <address2> [<isWordLevelDiff = true> ]`);
   exit(1);
 }
 const address1 = process.argv[2];
 const address2 = process.argv[3];
 
+let wordLevelDiff = true;
+const arg3 = process.argv[4]
+if (process.argv.length >= 5 && arg3[0] == 'f') {
+  wordLevelDiff = false;
+}
 
-// 0xAEf566ca7E84d1E736f999765a804687f39D9094
 const mkSourceCodeUrl = (address) => {
   return `https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${address}&apikey=${ETHERSCAN_API_KEY}`
 }
@@ -94,7 +98,13 @@ for (let i in files2) {
 console.log("\n* Diffs follow")
 
 const diffFiles = (f1, f2) => {
-  const result = spawnSync('git', ['diff', '--no-index', '--word-diff=plain', '--color', f1, f2]);
+  let args = ['diff', '--no-index', '--color'];
+  if (wordLevelDiff) {
+    args = args.concat(['--word-diff=plain']);
+  }
+  args = args.concat([f1, f2]);
+
+  const result = spawnSync('git', args);
   if (result.status != 0) {
     console.log(result.stdout.toString());
   }
