@@ -9,6 +9,17 @@ $ npm install
 ## Usage
 ### `diff-contract-code.js`
 
+This tool will download the verified smart contract code deployed at a particular address and do a file-by-file diff.
+
+#### Configuration
+
+Environment variable is `ETHERSCAN_API_KEY` required.
+Can also be used with other block explorers by setting the `ETHERSCAN_API_DOMAIN` environment variable.
+
+eg. `export ETHERSCAN_API_DOMAIN=api.polygonscan.com`
+
+#### Usage
+
 ```bash
 $ node diff-contract-code.js 0x19890cf5c9a0b8d2f71eb71347d126b6f7d78b76 0x83597765904e28e3a360c17cb1f5635cbcbfdd63
 ```
