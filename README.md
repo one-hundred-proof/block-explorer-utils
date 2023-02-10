@@ -13,8 +13,11 @@ This tool will download the verified smart contract code deployed at a particula
 
 #### Configuration
 
-Environment variable is `ETHERSCAN_API_KEY` required.
-Can also be used with other block explorers by setting the `ETHERSCAN_API_DOMAIN` environment variable.
+1.
+The environment variable `ETHERSCAN_API_KEY` is required. It can be placed in a `.env` file or exported.
+
+2.
+The tool can also be used with other block explorer APIs by setting the `ETHERSCAN_API_DOMAIN` environment variable. However, they must be clones of api.etherscan.io
 
 eg. `export ETHERSCAN_API_DOMAIN=api.polygonscan.com`
 
