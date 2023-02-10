@@ -1,4 +1,4 @@
-# Useful tools that use the etherscan.io API
+# Tools to use with block explorers
 
 ## Installation
 
