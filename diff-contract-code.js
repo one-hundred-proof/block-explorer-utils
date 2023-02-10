@@ -6,11 +6,17 @@ import { exit } from 'process';
 import { spawnSync } from 'child_process';
 
 dotenv.config();
-const { ETHERSCAN_API_KEY } = process.env;
+const { ETHERSCAN_API_KEY, ETHERSCAN_API_DOMAIN } = process.env;
 
 if (!ETHERSCAN_API_KEY) {
   console.log("Please export ETHERSCAN_API_KEY");
   exit(1);
+}
+
+let etherscanApiDomain = "api.etherscan.io";
+//
+if (ETHERSCAN_API_DOMAIN) {
+  etherscanApiDomain = ETHERSCAN_API_DOMAIN;
 }
 
 if (process.argv.length < 4) {
@@ -27,9 +33,16 @@ if (process.argv.length >= 5 && arg3[0] == 'f') {
 }
 
 const mkSourceCodeUrl = (address) => {
-  return `https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${address}&apikey=${ETHERSCAN_API_KEY}`
+  return `https:///${etherscanApiDomain}/api?module=contract&action=getsourcecode&address=${address}&apikey=${ETHERSCAN_API_KEY}`
 }
 
+const mkDirAndWriteFile = (dir, fileName, content) => {
+  fs.mkdirSync(path.join(dir, path.dirname(fileName)), { recursive: true });
+  fs.writeFileSync(path.join(dir, fileName), content);
+
+}
+
+// Returns directory and flag whether it is multiple files or not
 const getSourceFilesFromAddress = async (address) => {
   const response = await fetch(mkSourceCodeUrl(address));
 
@@ -39,22 +52,42 @@ const getSourceFilesFromAddress = async (address) => {
     exit(1);
   }
 
-  const str = data.result[0].SourceCode;
-  const sourceObj = JSON.parse(str.slice(1,str.length - 1)).sources;
+  const sourceCode = data.result[0].SourceCode;
 
   let dir = fs.mkdtempSync("temp-");
+  let areMultipleFiles = false;
 
-  for (let fileName in sourceObj) {
-    if (sourceObj.hasOwnProperty(fileName)) {
-      fs.mkdirSync(path.join(dir, path.dirname(fileName)), { recursive: true });
-      fs.writeFileSync(path.join(dir, fileName), sourceObj[fileName].content);
+  let sourceObj;
+  if (sourceCode.slice(0,2) == "{{") {
+    try {
+      sourceObj = JSON.parse(sourceCode.slice(1,sourceCode.length - 1)).sources;
+      areMultipleFiles = true;
+    } catch (e) {
+      areMultipleFiles = false;
     }
   }
-  return dir;
+
+
+
+  if (areMultipleFiles) {
+    for (let fileName in sourceObj) {
+      if (sourceObj.hasOwnProperty(fileName)) {
+        mkDirAndWriteFile(dir, fileName, sourceObj[fileName].content);
+      }
+    }
+  } else { // Just one flattened source files
+    mkDirAndWriteFile(dir, "Source.sol", sourceCode);
+  }
+  return { dir: dir, areMultipleFiles: areMultipleFiles };
 }
 
-const dir1 = await getSourceFilesFromAddress(address1);
-const dir2 = await getSourceFilesFromAddress(address2);
+const r1 = await getSourceFilesFromAddress(address1);
+const r2 = await getSourceFilesFromAddress(address2);
+
+const rmRf = (dir) => {
+  fs.rmSync(dir, { recursive: true, force: true});
+}
+
 
 const sliceOffFirstDirectory = (f) => {
   return f.split("/").slice(1).join("/");
@@ -72,56 +105,62 @@ const getFilesRecursively = (dir) => {
   return files;
 };
 
-
-const files1 = getFilesRecursively(dir1);
-const files2 = getFilesRecursively(dir2);
+const files1 = getFilesRecursively(r1.dir);
+const files2 = getFilesRecursively(r2.dir);
 
 console.log(`Address 1: ${address1}`);
 console.log(`Address 2: ${address2}`);
-console.log(`\n* At first address but not second`);
 
-for (let i in files1) {
-  let f = files1[i];
-  if (!files2.includes(f)) {
-    console.log(`  - ${f}`);
+if (r1.areMultipleFiles && r2.areMultipleFiles) {
+  console.log(`\n=== Files at first address but not second ===`);
+
+  for (let i in files1) {
+    let f = files1[i];
+    if (!files2.includes(f)) {
+      console.log(`  - ${f}`);
+    }
+  }
+
+  console.log(`\n=== Files at second address but not first ===`);
+  for (let i in files2) {
+    let f = files2[i];
+    if (!files1.includes(f)) {
+      console.log(`  - ${f}`);
+    }
   }
 }
 
-console.log(`\n* At second address but not first`);
-for (let i in files2) {
-  let f = files2[i];
-  if (!files1.includes(f)) {
-    console.log(`  - ${f}`);
-  }
-}
+if (r1.areMultipleFiles == r2.areMultipleFiles) {
+  console.log("\n=== Diffs follow ===")
 
-console.log("\n* Diffs follow")
+  const diffFiles = (f1, f2) => {
+    let args = ['diff', '--no-index', '--color'];
+    if (wordLevelDiff) {
+      args = args.concat(['--word-diff=plain']);
+    }
+    args = args.concat([f1, f2]);
 
-const diffFiles = (f1, f2) => {
-  let args = ['diff', '--no-index', '--color'];
-  if (wordLevelDiff) {
-    args = args.concat(['--word-diff=plain']);
-  }
-  args = args.concat([f1, f2]);
+    const result = spawnSync('git', args);
+    if (result.status != 0) {
+      console.log(result.stdout.toString());
+    }
 
-  const result = spawnSync('git', args);
-  if (result.status != 0) {
-    console.log(result.stdout.toString());
   }
 
-}
-
-for (let i in files1) {
-  let f = files1[i];
-  if (files2.includes(f)) {
-    diffFiles(`${dir1}/${f}`, `${dir2}/${f}`);
+  for (let i in files1) {
+    let f = files1[i];
+    if (files2.includes(f)) {
+      diffFiles(`${r1.dir}/${f}`, `${r2.dir}/${f}`);
+    }
   }
+} else if (r1.areMultipleFiles) {
+  console.log(`Error: Multiple files at address ${address1} and not ${address2}`);
+} else if (r2.areMultipleFiles) {
+  console.log(`Error: Multiple files at address ${address2} and not ${address1}`);
+
 }
 
-const rmRf = (dir) => {
-  fs.rmSync(dir, { recursive: true, force: true});
-}
-
-rmRf(dir1);
-rmRf(dir2);
+// Clean up
+rmRf(r1.dir);
+rmRf(r2.dir);
 
