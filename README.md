@@ -6,7 +6,7 @@
 $ npm install
 ```
 
-## Usage
+## The tools
 ### `diff-contract-code.js`
 
 This tool will download the verified smart contract code deployed at a particular address and do a file-by-file diff.
