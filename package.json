@@ -19,6 +19,7 @@
   "homepage": "https://github.com/one-hundred-proof/etherscan-utils#readme",
   "dependencies": {
     "dotenv": "^16.0.3",
-    "node-fetch": "^3.3.0"
+    "node-fetch": "^3.3.0",
+    "web3": "^1.8.2"
   }
 }
