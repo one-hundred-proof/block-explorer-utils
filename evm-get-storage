@@ -26,7 +26,8 @@ else
   BLOCK=$3
 fi
 
+echo -n "$SLOT: "
 curl -s $PREFIX/$INFURA_API_KEY \
     -X POST \
     -H "Content-Type: application/json" \
-    -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getStorageAt\",\"params\": [\"$CONTRACT\", \"$SLOT\", \"$BLOCK\"],\"id\":1}" | jq
+    -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getStorageAt\",\"params\": [\"$CONTRACT\", \"$SLOT\", \"$BLOCK\"],\"id\":1}" | jq '.result'
