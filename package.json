@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/one-hundred-proof/etherscan-utils.git"
+    "url": "git+https://github.com/one-hundred-proof/block-explorer-utils.git"
   },
   "author": "100proof",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/one-hundred-proof/etherscan-utils/issues"
+    "url": "https://github.com/one-hundred-proof/block-explorer-utils/issues"
   },
-  "homepage": "https://github.com/one-hundred-proof/etherscan-utils#readme",
+  "homepage": "https://github.com/one-hundred-proof/block-explorer-utils#readme",
   "dependencies": {
     "dotenv": "^16.0.3",
     "node-fetch": "^3.3.0",
