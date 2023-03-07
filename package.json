@@ -1,9 +1,12 @@
 {
-  "name": "etherscan-utils",
+  "name": "block-explorer-utils",
   "version": "0.0.1",
-  "description": "A collection of utilities to use with the etherscan.io API",
+  "description": "A collection of utilities to use with the block explorer APIs",
   "type": "module",
   "main": "main.js",
+  "bin": {
+    "keccak256": "keccak256.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
